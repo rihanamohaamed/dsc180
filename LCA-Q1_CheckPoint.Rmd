@@ -1,0 +1,137 @@
+**LCA(Latent Class Analysis) with variables age, admission type (elective or emergency) and morbiditiy composition of each patient**
+```{r}
+library(RPostgreSQL)
+library(poLCA)
+```
+Establish connection to database in PostgreSQL
+```{r}
+#Establish connection to database in PostgreSQL
+conn <- dbConnect(drv="PostgreSQL",
+                  dbname="mimic",
+                  host= "localhost",
+                  user="postgres")
+```
+Query* to select necessary variables -
+
+*Assuming create_elixhauser, create_patient_info,
+*and create_elixhauser_final have been run in database already,
+```{r}
+# *Assuming create_elixhauser and #create_patient_info 
+# *and create_elixhauser_final
+# *have been run in database already
+# Query* to select elixhauser_final -
+
+query <- "SELECT age, admission_type_encoded, congestive_heart_failure, 
+                     cardiac_arrhythmias, valvular_disease, 
+                     pulmonary_circulation,
+                     peripheral_vascular, hypertension,
+                     paralysis,
+                     other_neurological,
+                     chronic_pulmonary,
+                     diabetes_uncomplicated,
+                     diabetes_complicated, hypothyroidism,
+                     renal_failure,
+                     liver_disease,
+                     peptic_ulcer,
+                     aids,
+                     lymphoma,
+                     solid_tumor,
+                     rheumatoid_arthritis,
+                     coagulopathy,
+                     obesity,
+                     weight_loss,
+                     fluid_electrolyte,
+                     blood_loss_anemia,
+                     deficiency_anemias,
+                     alcohol_abuse,
+                     drug_abuse,
+                     psychoses,
+                     depression FROM ELIXHAUSER_FINAL;"
+```
+Store query results
+
+```{r}
+final_table <- dbGetQuery(conn, query)
+```
+
+Factor all variables for LCA (poLCA requires factored data)
+```{r}
+final_table$age <- as.factor(final_table$age)
+final_table$admission_type_encoded <- as.factor(
+
+final_table$admission_type_encoded)
+comorbidity_columns <- c(
+  "congestive_heart_failure",
+  "cardiac_arrhythmias",
+  "valvular_disease",
+  "pulmonary_circulation",
+  "peripheral_vascular",
+  "hypertension",
+  "paralysis",
+  "other_neurological",
+  "chronic_pulmonary",
+  "diabetes_uncomplicated",
+  "diabetes_complicated",
+  "hypothyroidism",
+  "renal_failure",
+  "liver_disease",
+  "peptic_ulcer",
+  "aids",
+  "lymphoma",
+  "solid_tumor",
+  "rheumatoid_arthritis",
+  "coagulopathy",
+  "obesity",
+  "weight_loss",
+  "fluid_electrolyte",
+  "blood_loss_anemia",
+  "deficiency_anemias",
+  "alcohol_abuse",
+  "drug_abuse",
+  "psychoses",
+  "depression"
+)
+
+
+final_table[comorbidity_columns] <- lapply(
+                              final_table[comorbidity_columns], as.factor)
+```
+
+Define formula for running LCA with poLCA, cbind creates matrix 
+with observed variables, and "~1" indicates 1 latent class being created
+```{r}
+lca_formula <- cbind(age, admission_type_encoded, congestive_heart_failure, 
+                     cardiac_arrhythmias, valvular_disease, 
+                     pulmonary_circulation,
+                     peripheral_vascular, hypertension,
+                     paralysis,
+                     other_neurological,
+                     chronic_pulmonary,
+                     diabetes_uncomplicated,
+                     diabetes_complicated, hypothyroidism,
+                     renal_failure,
+                     liver_disease,
+                     peptic_ulcer,
+                     aids,
+                     lymphoma,
+                     solid_tumor,
+                     rheumatoid_arthritis,
+                     coagulopathy,
+                     obesity,
+                     weight_loss,
+                     fluid_electrolyte,
+                     blood_loss_anemia,
+                     deficiency_anemias,
+                     alcohol_abuse,
+                     drug_abuse,
+                     psychoses,
+                     depression) ~1
+
+```
+
+Run LCA model, we are using 5 Latent classes to model the data here
+```{r}
+lca_out <- poLCA(lca_formula, data=final_table, nclass=5, graph=TRUE)
+
+dbDisconnect(conn)
+```
