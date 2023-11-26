@@ -7,7 +7,7 @@ Establish connection to database in PostgreSQL
 ```{r}
 #Establish connection to database in PostgreSQL
 conn <- dbConnect(drv="PostgreSQL",
-                  dbname="mimic",
+                  dbname="mimiciii",
                   host= "localhost",
                   user="postgres")
 ```
@@ -57,9 +57,7 @@ final_table <- dbGetQuery(conn, query)
 Factor all variables for LCA (poLCA requires factored data)
 ```{r}
 final_table$age <- as.factor(final_table$age)
-final_table$admission_type_encoded <- as.factor(
-
-final_table$admission_type_encoded)
+final_table$admission_type_encoded <- as.factor(final_table$admission_type_encoded)
 comorbidity_columns <- c(
   "congestive_heart_failure",
   "cardiac_arrhythmias",
@@ -92,6 +90,7 @@ comorbidity_columns <- c(
   "depression"
 )
 
+final_table$comorbidity_columns <- as.factor(final_table$comorbidity_columns)
 
 final_table[comorbidity_columns] <- lapply(
                               final_table[comorbidity_columns], as.factor)
